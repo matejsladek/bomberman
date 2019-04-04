@@ -46,7 +46,8 @@
     "prop-types": "15.7.2",
     "react": "16.8.6",
     "react-dom": "16.8.6",
-    "react-hot-loader": "4.8.2"
+    "react-hot-loader": "4.8.2",
+    "socket.io-client": "^2.2.0"
   },
   "resolutions": {
     "babel-core": "7.0.0-bridge.0"

@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const app = express();
 const port = 3000;
+const io = require('socket.io')(80);
 
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -44,6 +45,10 @@ app.use(cors({
     }
 }));
 
+io.on('connection', function(socket){
+    console.log('a user connected');
+});
+
 const rooms = [{
     id: 1,
     state: 'pending',
@@ -61,6 +66,17 @@ app.get('/', (req, res) => res.send('Hello World!'));
 
 app.get('/rooms', (req, res) => {
     res.json(rooms);
+});
+
+app.get('/startGame/:roomId', (req, res) => {
+    const roomId = req.params.roomId;
+    for (let i = 0; i < rooms.length; i++) {
+        if(id === roomId){
+           rooms[i].state = 'started';
+        }
+    }
+
+    res.sendStatus(200);
 });
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
