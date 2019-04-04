@@ -10,7 +10,14 @@ class Room extends React.Component {
   }
 
   render() {
-    return <div>Room</div>;
+    return (
+      <div>
+        <button type="button" className="btn btn-secondary" onClick={this.props.backToLobby}>
+          Back
+        </button>
+        Room {this.props.roomId}
+      </div>
+    );
   }
 }
 

@@ -1,16 +1,40 @@
 import React from 'react';
 import style from './lobby.css';
+import {URL} from '../constants';
+import RoomEntry from '../room-entry'
 
 class Lobby extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      screen: 'Lobby',
+      rooms: [],
     };
   }
 
+  async componentDidMount() {
+    try{
+      const res = await fetch(URL + "/rooms");
+      const rooms = await res.json();
+      console.log('sem', rooms);
+      this.setState({rooms});
+    } catch(e){
+      console.log(e);
+    }
+  }
+
   render() {
-    return <div>Lobby</div>;
+    const rooms = this.state.rooms;
+    console.log('roooms: ', rooms);
+    return (<div>
+      {rooms.map((room, i) => {
+        return (
+          <RoomEntry
+            data={room}
+            handleJoinRoom={this.props.handleJoinRoom}
+            key={i}
+          />);
+      })};
+    </div>);
   }
 }
 
