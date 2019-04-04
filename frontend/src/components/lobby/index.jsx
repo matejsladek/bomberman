@@ -13,9 +13,10 @@ class Lobby extends React.Component {
 
   async componentDidMount() {
     try{
-      const res = await fetch(URL + "/rooms");
+      const res = await fetch(URL + "/rooms", {
+        credentials: 'include'
+      });
       const rooms = await res.json();
-      console.log('sem', rooms);
       this.setState({rooms});
     } catch(e){
       console.log(e);
@@ -33,7 +34,7 @@ class Lobby extends React.Component {
             handleJoinRoom={this.props.handleJoinRoom}
             key={i}
           />);
-      })};
+      })}
     </div>);
   }
 }

@@ -16,6 +16,9 @@ class Room extends React.Component {
           Back
         </button>
         Room {this.props.roomId}
+          <button type="button" className="btn btn-success" onClick={this.props.startGame}>
+              Start
+          </button>
       </div>
     );
   }
