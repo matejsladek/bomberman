@@ -46,6 +46,22 @@ app.use(cors({
 
 io.on('connection', function (socket) {
     console.log('a user connected');
+    socket.on("movePlayer", function (data) {
+        io.emit('movePlayer', data);
+        for (let i = 0; i < rooms.length; i++) {
+            const room = rooms[i];
+            if(room.id === data.roomId){
+                for (let j = 0; j < room.players.length; j++) {
+                    const player = room.players[j];
+                    if(player.id === data.player.playerId){
+                        player.x = data.player.x;
+                        player.y = data.player.y;
+                    }
+                }
+            }
+        }
+    });
+
 });
 
 const rooms = [{
@@ -108,6 +124,18 @@ app.get('/leaveRoom/:roomId', (req, res) => {
 
 app.get('/startGame/:roomId', (req, res) => {
     const roomId = req.params.roomId;
+    for (let i = 0; i < rooms.length; i++) {
+        const id = rooms[i].id;
+        if (id === roomId) {
+            rooms[i].state = 'started';
+        }
+    }
+    io.emit('startGame', {roomId});
+    res.sendStatus(200);
+});
+
+app.get('/movePlayer', (req, res) => {
+    const roomId = req.body;
     for (let i = 0; i < rooms.length; i++) {
         const id = rooms[i].id;
         if (id === roomId) {

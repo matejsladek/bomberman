@@ -10,6 +10,7 @@ class Game extends React.Component {
     this.preload = this.preload.bind(this);
     this.create = this.create.bind(this);
     this.update = this.update.bind(this);
+    this.movePlayer = this.movePlayer.bind(this);
   }
 
   componentDidMount() {
@@ -29,6 +30,7 @@ class Game extends React.Component {
     };
 
     this.game = new Phaser.Game(this.config);
+    this.props.socket.on("movePlayer", this.movePlayer);
   }
 
   preload() {
@@ -57,12 +59,6 @@ class Game extends React.Component {
       if (room.players[i].id === playerId) return room.players[i];
     }
   }
-
-  // setPlayer(playerId){
-  // for (let i = 0; i < room.players.length; i++) {
-  //         if(room.players[i].id === playerId) return room.players[i];
-  //     }
-  // }
   update() {
     const id = parseInt(getCookie('id'));
     let player = null;
@@ -83,6 +79,31 @@ class Game extends React.Component {
       player.setVelocityY(160);
     } else {
       player.setVelocityY(0);
+    }
+    this.props.socket.emit("movePlayer", {
+      roomId: this.props.room.id,
+      player: {
+        playerId: player.playerId,
+        x: player.x,
+        y: player.y,
+      },
+    });
+  }
+
+  movePlayer(data) {
+    console.log("movePlayer sam seba");
+    const myPlayerId = parseInt(getCookie('id'));
+    if(this.props.room.id === data.roomId){
+      if(!this.players) return;
+      for (let i = 0; i < this.players.length; i++) {
+        const player = this.players[i];
+        console.log('cudzi');
+        if(player.playerId === myPlayerId) continue;
+        if(player.playerId === data.player.playerId){
+          player.x = data.player.x;
+          player.y = data.player.y;
+        }
+      }
     }
   }
 

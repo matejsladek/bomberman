@@ -93,6 +93,7 @@ class Main extends React.Component {
             roomId={this.state.roomId}
             room={this.getRoom(roomId)}
             backToLobby={this.backToLobby}
+            socket={this.socket}
         />
     );
   }
