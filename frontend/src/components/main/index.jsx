@@ -13,6 +13,7 @@ class Main extends React.Component {
     this.backToLobby = this.backToLobby.bind(this);
     this.startGameEvent = this.startGameEvent.bind(this);
     this.getRooms = this.getRooms.bind(this);
+    this.changePlayers = this.changePlayers.bind(this);
     this.state = {
       screen: 'Lobby',
       // screen: 'Game',
@@ -21,6 +22,7 @@ class Main extends React.Component {
     };
     this.socket = io('http://localhost:80');
     this.socket.on('startGame', this.startGameEvent);
+    this.socket.on('changePlayers', this.changePlayers);
   }
 
   componentDidMount() {
@@ -34,6 +36,11 @@ class Main extends React.Component {
       this.getRooms();
     }
     console.log('startgameevent data', data);
+  }
+
+  changePlayers(data){
+    this.setState({rooms: data});
+    console.log('changeplayers data', data);
   }
 
   async joinRoom(roomId){

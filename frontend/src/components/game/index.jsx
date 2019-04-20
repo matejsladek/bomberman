@@ -97,7 +97,6 @@ class Game extends React.Component {
       if(!this.players) return;
       for (let i = 0; i < this.players.length; i++) {
         const player = this.players[i];
-        console.log('cudzi');
         if(player.playerId === myPlayerId) continue;
         if(player.playerId === data.player.playerId){
           player.x = data.player.x;
@@ -107,12 +106,17 @@ class Game extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    this.game.destroy();
+    console.log('konec');
+  }
+
   render() {
     let component = this;
     console.log('this state', this.props.room);
     return (
       <div>
-        <button type="button" className="btn btn-secondary" onClick={this.props.backToLobby}>
+        <button type="button" className="btn btn-secondary" onClick={() => this.props.backToLobby(this.props.roomId)}>
           Back
         </button>
         game:

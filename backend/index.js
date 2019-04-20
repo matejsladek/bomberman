@@ -114,8 +114,18 @@ app.get('/joinRoom/:roomId', (req, res) => {
       });
     }
   }
+  io.emit('changePlayers', rooms);
   res.json(rooms);
 });
+
+function resetGame(idx){
+  for (let i = 0; i < rooms.length; i++) {
+    const id = rooms[i].id;
+    if (id === idx) {
+      rooms[i].state = "pending";
+    }
+  }
+}
 
 function removePlayer(roomId, playerId) {
   for (let i = 0; i < rooms.length; i++) {
@@ -128,8 +138,12 @@ function removePlayer(roomId, playerId) {
         }
       }
       rooms[i].players = players;
+      if(players.length === 0){
+        resetGame(id);
+      }
     }
   }
+  io.emit('changePlayers', rooms);
 }
 
 app.get('/leaveRoom/:roomId', (req, res) => {
@@ -140,7 +154,7 @@ app.get('/leaveRoom/:roomId', (req, res) => {
 });
 
 app.get('/startGame/:roomId', (req, res) => {
-  const roomId = req.params.roomId;
+  const roomId = parseInt(req.params.roomId);
   for (let i = 0; i < rooms.length; i++) {
     const id = rooms[i].id;
     if (id === roomId) {
