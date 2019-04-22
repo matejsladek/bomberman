@@ -11,13 +11,21 @@ class Game extends React.Component {
     this.create = this.create.bind(this);
     this.update = this.update.bind(this);
     this.movePlayer = this.movePlayer.bind(this);
+    this.placeBomb = this.placeBomb.bind(this);
+    this.bombExplode = this.bombExplode.bind(this);
+    this.pixelsToMap = this.pixelsToMap.bind(this);
   }
 
   componentDidMount() {
+    this.width = 600;
+    this.height = 600;
+    this.blockSize = this.width/12;
+    this.playerStartPositions = [[0,0], [11, 0], [0, 11], [11, 11]];
+    this.bombButtonJustPressed = false;
     this.config = {
       type: Phaser.AUTO,
-      width: 600,
-      height: 600,
+      width: this.width,
+      height: this.height,
       scene: {
         preload: this.preload,
         create: this.create,
@@ -31,27 +39,73 @@ class Game extends React.Component {
 
     this.game = new Phaser.Game(this.config);
     this.props.socket.on("movePlayer", this.movePlayer);
+    this.props.socket.on("placeBomb", this.placeBomb);
   }
 
   preload() {
-    const scene = this.game.scene.keys["default"];
+    this.scene = this.game.scene.keys["default"];
     const starPath = require("../../../assets/star.png");
-    scene.load.image('star', starPath);
+    const groundPath = require("../../../assets/platform32.png");
+    const bombPath = require("../../../assets/bomb.png");
+    this.scene.load.image('star', starPath);
+    this.scene.load.image('ground', groundPath);
+    this.scene.load.image('bomb', bombPath);
     console.log('this preload', this);
   }
 
+  generateBlocks(){
+    const blocks = [];
+    for (let i = 0; i < 12; i++) {
+      for (let j = 0; j < 12; j++) {
+        if(this.playerStartPositions.some(r => r[0] === i && r[1] === j)) continue;
+        if((i + j) % 2 === 0) continue;
+        const b = {};
+        b.x = i*this.blockSize;
+        b.y = j*this.blockSize;
+        blocks.push(b);
+      }
+    }
+    return blocks;
+  }
+
   create() {
-    const scene = this.game.scene.keys["default"];
-    this.cursors = scene.input.keyboard.createCursorKeys();
+    const id = parseInt(getCookie('id'));
+    this.blocks = this.generateBlocks();
+    // const scene = this.game.scene.keys["default"];
+    this.cursors = this.scene.input.keyboard.createCursorKeys();
     this.players = [];
+    this.platforms = [];
+    for (let i = 0; i < this.blocks.length; i++) {
+      const block = this.blocks[i];
+      const platform = this.scene.physics.add.staticGroup();
+      // this.platforms.create(600, 400, 'ground');
+      // platform.create(block.x, block.y, 'ground').setScale(2).setOrigin(0,0).refreshBody();
+      const pl = platform.create(block.x, block.y, 'ground').setDisplaySize(this.blockSize, this.blockSize).setOrigin(0,0).refreshBody();
+      this.platforms.push(pl);
+    }
+    // this.platforms.create(750, 220, 'ground');
     for (let i = 0; i < this.props.room.players.length; i++) {
       const playerProps = this.props.room.players[i];
-      const player = scene.physics.add.sprite(100, 450, 'star');
+      const player = this.scene.physics.add.sprite(0, 0, 'star');
+      // player.setSize(this.blockSize/2, this.blockSize/2);
+      // player.displayWidth = this.blockSize/2;
+      // player.displayWidth(this.blockSize/2);
+      // player.setScale(2);
+      player.setOrigin(0,0);
+      player.setDisplaySize(this.blockSize-10, this.blockSize-10);
       player.setBounce(0.2);
       player.setCollideWorldBounds(true);
       player.playerId = playerProps.id;
+      if(player.playerId === id){
+        this.player = player;
+      }
+      this.scene.physics.add.collider(player, this.platforms);
       this.players.push(player);
     }
+  }
+
+  pixelsToMap(px, py){
+    return {x: parseInt(px/this.blockSize), y: parseInt(py/this.blockSize)};
   }
 
   getPlayer(playerId) {
@@ -60,38 +114,46 @@ class Game extends React.Component {
     }
   }
   update() {
-    const id = parseInt(getCookie('id'));
-    let player = null;
-    for (let i = 0; i < this.players.length; i++) {
-      const x = this.players[i];
-      if(x.playerId === id) player = x;
-    }
     if(this.cursors.left.isDown) {
-      player.setVelocityX(-160);
+      this.player.setVelocityX(-160);
     } else if (this.cursors.right.isDown) {
-      player.setVelocityX(160);
+      this.player.setVelocityX(160);
     } else {
-      player.setVelocityX(0);
+      this.player.setVelocityX(0);
     }
     if(this.cursors.up.isDown) {
-      player.setVelocityY(-160);
+      this.player.setVelocityY(-160);
     } else if (this.cursors.down.isDown) {
-      player.setVelocityY(160);
+      this.player.setVelocityY(160);
     } else {
-      player.setVelocityY(0);
+      this.player.setVelocityY(0);
     }
     this.props.socket.emit("movePlayer", {
       roomId: this.props.room.id,
       player: {
-        playerId: player.playerId,
-        x: player.x,
-        y: player.y,
+        playerId: this.player.playerId,
+        x: this.player.x,
+        y: this.player.y,
       },
     });
+    // if(this.cursors.space.isDown && !game.physics.arcade.overlap(this, level.bombs) && !this.bombButtonJustPressed) {
+    if(this.cursors.space.isDown && !this.bombButtonJustPressed) {
+      console.log('sssssss');
+      this.bombButtonJustPressed = true;
+
+      this.props.socket.emit("placeBomb", {
+        roomId: this.props.room.id,
+        x: this.player.x,
+        y: this.player.y,
+        time: this.scene.time.now,
+      });
+    } else if(!this.cursors.space.isDown && this.bombButtonJustPressed) {
+      this.bombButtonJustPressed = false;
+    }
   }
 
   movePlayer(data) {
-    console.log("movePlayer sam seba");
+    // console.log("movePlayer sam seba");
     const myPlayerId = parseInt(getCookie('id'));
     if(this.props.room.id === data.roomId){
       if(!this.players) return;
@@ -101,6 +163,34 @@ class Game extends React.Component {
         if(player.playerId === data.player.playerId){
           player.x = data.player.x;
           player.y = data.player.y;
+        }
+      }
+    }
+  }
+
+  placeBomb(data) {
+    console.log('placeBomb client');
+    const myPlayerId = parseInt(getCookie('id'));
+    if(this.props.room.id === data.roomId){
+      const bombGroup = this.scene.physics.add.staticGroup();
+      const bomb = bombGroup.create(data.x, data.y, 'bomb').setDisplaySize(this.blockSize/2, this.blockSize/2).setOrigin(0,0).refreshBody();
+      setTimeout(() => this.bombExplode(bomb), 3000);
+    }
+  }
+
+  bombExplode(bomb){
+    console.log('bomb explode');
+    bomb.disableBody(true, true);
+    const pos = this.pixelsToMap(bomb.x, bomb.y);
+    const nei = [[0,0], [-1,0], [1, 0], [0, -1], [0, 1]];
+    for (let i = 0; i < this.blocks.length; i++) {
+      const block = this.blocks[i];
+      const posBlock = this.pixelsToMap(block.x, block.y);
+      for (let j = 0; j < nei.length; j++) {
+        const ne = nei[j];
+        if(pos.x + ne[0] === posBlock.x && pos.y + ne[1] === posBlock.y){
+          this.platforms[i].disableBody(true, true);
+          break;
         }
       }
     }

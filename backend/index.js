@@ -61,6 +61,10 @@ function movePlayer(data) {
   }
 }
 
+function placeBomb(data) {
+  io.emit('placeBomb', data);
+}
+
 function disconnect(socket) {
   console.log('disconnect');
   const cookiesStr = socket.request.headers.cookie;
@@ -75,6 +79,7 @@ function disconnect(socket) {
 io.on('connection', function (socket) {
   socket.on("movePlayer", movePlayer);
   socket.on('disconnect', () => disconnect(socket));
+  socket.on('placeBomb', placeBomb);
 });
 
 const rooms = [{
