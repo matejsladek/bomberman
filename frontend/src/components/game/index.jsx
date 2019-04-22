@@ -14,6 +14,7 @@ class Game extends React.Component {
     this.placeBomb = this.placeBomb.bind(this);
     this.bombExplode = this.bombExplode.bind(this);
     this.pixelsToMap = this.pixelsToMap.bind(this);
+    this.playerDead = this.playerDead.bind(this);
   }
 
   componentDidMount() {
@@ -40,7 +41,9 @@ class Game extends React.Component {
     this.game = new Phaser.Game(this.config);
     this.props.socket.on("movePlayer", this.movePlayer);
     this.props.socket.on("placeBomb", this.placeBomb);
+    this.props.socket.on("playerDead", this.playerDead);
   }
+
 
   preload() {
     this.scene = this.game.scene.keys["default"];
@@ -55,9 +58,19 @@ class Game extends React.Component {
 
   generateBlocks(){
     const blocks = [];
+    const notBlocks = [];
+    const nei = [[0,0], [-1,0], [1, 0], [0, -1], [0, 1]];
+    for (let i = 0; i < this.playerStartPositions.length; i++) {
+      for (let j = 0; j < nei.length; j++) {
+        const ne = nei[j];
+        const bl = this.playerStartPositions[i];
+        notBlocks.push([bl[0] + ne[0], bl[1] + ne[1]]);
+      }
+    }
     for (let i = 0; i < 12; i++) {
       for (let j = 0; j < 12; j++) {
         if(this.playerStartPositions.some(r => r[0] === i && r[1] === j)) continue;
+        if(notBlocks.some(r => r[0] === i && r[1] === j)) continue;
         if((i + j) % 2 === 0) continue;
         const b = {};
         b.x = i*this.blockSize;
@@ -96,6 +109,7 @@ class Game extends React.Component {
       player.setBounce(0.2);
       player.setCollideWorldBounds(true);
       player.playerId = playerProps.id;
+      player.alive = true;
       if(player.playerId === id){
         this.player = player;
       }
@@ -137,7 +151,7 @@ class Game extends React.Component {
       },
     });
     // if(this.cursors.space.isDown && !game.physics.arcade.overlap(this, level.bombs) && !this.bombButtonJustPressed) {
-    if(this.cursors.space.isDown && !this.bombButtonJustPressed) {
+    if(this.cursors.space.isDown && !this.bombButtonJustPressed && this.player.alive) {
       console.log('sssssss');
       this.bombButtonJustPressed = true;
 
@@ -170,7 +184,6 @@ class Game extends React.Component {
 
   placeBomb(data) {
     console.log('placeBomb client');
-    const myPlayerId = parseInt(getCookie('id'));
     if(this.props.room.id === data.roomId){
       const bombGroup = this.scene.physics.add.staticGroup();
       const bomb = bombGroup.create(data.x, data.y, 'bomb').setDisplaySize(this.blockSize/2, this.blockSize/2).setOrigin(0,0).refreshBody();
@@ -194,10 +207,36 @@ class Game extends React.Component {
         }
       }
     }
+    const playerPos = this.pixelsToMap(this.player.x, this.player.y);
+    for (let j = 0; j < nei.length; j++) {
+      const ne = nei[j];
+      if(pos.x + ne[0] === playerPos.x && pos.y + ne[1] === playerPos.y){
+        this.props.socket.emit("playerDead", {
+          roomId: this.props.room.id,
+          playerId: this.player.playerId,
+        });
+      }
+    }
+  }
+
+  playerDead(data) {
+    console.log('playerDead');
+    if(this.props.room.id === data.roomId){
+      for (let i = 0; i < this.players.length; i++) {
+        const player = this.players[i];
+        if(player.playerId === data.playerId){
+          player.alive = false;
+          player.disableBody(true, true);
+        }
+      }
+    }
   }
 
   componentWillUnmount() {
     this.game.destroy();
+    this.props.socket.off("movePlayer", this.movePlayer);
+    this.props.socket.off("placeBomb", this.placeBomb);
+    this.props.socket.off("playerDead", this.playerDead);
     console.log('konec');
   }
 

@@ -19,6 +19,7 @@ class Main extends React.Component {
       // screen: 'Game',
       roomId: 0,
       rooms: [],
+      gameId: "",
     };
     this.socket = io('http://localhost:80');
     this.socket.on('startGame', this.startGameEvent);
@@ -31,7 +32,8 @@ class Main extends React.Component {
 
   startGameEvent(data){
     if(this.state.screen === "Room" && this.state.roomId === parseInt(data.roomId)){
-      this.setState({screen: "Game"});
+      console.log('start');
+      this.setState({screen: "Game", gameId: data.id});
     } else{
       this.getRooms();
     }
@@ -97,6 +99,7 @@ class Main extends React.Component {
     }
     return (
         <Game
+            key={this.state.gameId}
             roomId={this.state.roomId}
             room={this.getRoom(roomId)}
             backToLobby={this.backToLobby}

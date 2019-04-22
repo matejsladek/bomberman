@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const uuid = require("uuid");
 const cors = require('cors');
 const app = express();
 const port = 3000;
@@ -65,6 +66,10 @@ function placeBomb(data) {
   io.emit('placeBomb', data);
 }
 
+function playerDead(data) {
+  io.emit('playerDead', data);
+}
+
 function disconnect(socket) {
   console.log('disconnect');
   const cookiesStr = socket.request.headers.cookie;
@@ -80,6 +85,7 @@ io.on('connection', function (socket) {
   socket.on("movePlayer", movePlayer);
   socket.on('disconnect', () => disconnect(socket));
   socket.on('placeBomb', placeBomb);
+  socket.on('playerDead', playerDead);
 });
 
 const rooms = [{
@@ -166,7 +172,8 @@ app.get('/startGame/:roomId', (req, res) => {
       rooms[i].state = 'started';
     }
   }
-  io.emit('startGame', {roomId});
+  const id = uuid.v4();
+  io.emit('startGame', {roomId, id});
   res.sendStatus(200);
 });
 
