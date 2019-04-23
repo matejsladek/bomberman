@@ -6,6 +6,7 @@ import GameOver from '../gameOver';
 import style from './main.css';
 import io from 'socket.io-client'
 import {URL} from "../constants";
+import UUID from 'uuid/v4';
 
 class Main extends React.Component {
   constructor(props) {
@@ -16,20 +17,28 @@ class Main extends React.Component {
     this.getRooms = this.getRooms.bind(this);
     this.changePlayers = this.changePlayers.bind(this);
     this.goGameOver = this.goGameOver.bind(this);
+    this.connectSocket = this.connectSocket.bind(this);
     this.state = {
       screen: 'Lobby',
       // screen: 'Game',
+      myId: UUID(),
       roomId: 0,
       rooms: [],
       gameId: "",
     };
-    this.socket = io('http://localhost:3000');
+    this.socket = io(URL);
+    this.socket.on('connect', this.connectSocket);
     this.socket.on('startGame', this.startGameEvent);
     this.socket.on('changePlayers', this.changePlayers);
+    console.log("myId", this.state.myId);
   }
 
   componentDidMount() {
     this.getRooms();
+  }
+
+  connectSocket(){
+    this.socket.emit('login', {myId: this.state.myId});
   }
 
   startGameEvent(data){
@@ -49,7 +58,7 @@ class Main extends React.Component {
 
   async joinRoom(roomId){
     const screen = "Room";
-    const res = await fetch(URL + `/joinRoom/${roomId}`, {credentials: 'include'});
+    const res = await fetch(URL + `/joinRoom/${roomId}/${this.state.myId}`);
     const rooms = await res.json();
     console.log('joinRoom', rooms);
     this.setState({screen, roomId, rooms});
@@ -57,14 +66,14 @@ class Main extends React.Component {
 
   async backToLobby(roomId){
     console.log("back to lobby");
-    const res = await fetch(URL + `/leaveRoom/${roomId}`, {credentials: 'include'});
+    const res = await fetch(URL + `/leaveRoom/${roomId}/${this.state.myId}`);
     const rooms = await res.json();
     this.setState({screen: "Lobby", rooms});
   }
 
   async getRooms(){
     try{
-      const res = await fetch(URL + "/rooms", {credentials: 'include'});
+      const res = await fetch(URL + "/rooms");
       const rooms = await res.json();
       this.setState({rooms});
     } catch(e){
@@ -108,6 +117,7 @@ class Main extends React.Component {
       return (
         <Game
           key={this.state.gameId}
+          myId={this.state.myId}
           roomId={this.state.roomId}
           room={this.getRoom(roomId)}
           backToLobby={this.backToLobby}

@@ -1,6 +1,5 @@
 import React from 'react';
 import * as Phaser from 'phaser';
-import {getCookie} from '../helpers';
 
 // import style from './lobby.css';
 
@@ -83,7 +82,7 @@ class Game extends React.Component {
   }
 
   create() {
-    const id = parseInt(getCookie('id'));
+    const id = this.props.myId;
     this.blocks = this.generateBlocks();
     // const scene = this.game.scene.keys["default"];
     this.cursors = this.scene.input.keyboard.createCursorKeys();
@@ -170,8 +169,7 @@ class Game extends React.Component {
   }
 
   movePlayer(data) {
-    // console.log("movePlayer sam seba");
-    const myPlayerId = parseInt(getCookie('id'));
+    const myPlayerId = this.props.myId;
     if(this.props.room.id === data.roomId){
       if(!this.players) return;
       for (let i = 0; i < this.players.length; i++) {

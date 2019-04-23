@@ -1,33 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
 const uuid = require("uuid");
 const cors = require('cors');
 const app = express();
 const server = require('http').createServer(app);
 const port = process.env.PORT || 3000;
 const io = require('socket.io')(server);
-const cookie = require('cookie');
 
-app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
-
-// set a cookie
-app.use(function (req, res, next) {
-  // check if client sent cookie
-  const cookie = req.cookies.id;
-  if (cookie === undefined) {
-    // no: set a new cookie
-    let randomNumber = Math.random().toString();
-    randomNumber = randomNumber.substring(2, randomNumber.length);
-    res.cookie('id', randomNumber);
-    console.log('cookie created successfully');
-  } else {
-    console.log('cookie exists', cookie);
-  }
-  next(); // <-- important!
-});
 
 const allowedOrigins = ['http://localhost:3000',
   'http://localhost:8080',
@@ -73,16 +54,20 @@ function playerDead(data) {
 
 function disconnect(socket) {
   console.log('disconnect');
-  const cookiesStr = socket.request.headers.cookie;
-  const cookies = cookie.parse(cookiesStr);
-  const playerId = parseInt(cookies.id);
+  const playerId = socket.myId;
   for (let i = 0; i < rooms.length; i++) {
       const room = rooms[i];
       removePlayer(room.id, playerId);
   }
 }
 
+function login(socket, data) {
+  console.log('login', data);
+  socket.myId = data.myId;
+}
+
 io.on('connection', function (socket) {
+  socket.on("login", (data) => login(socket, data));
   socket.on("movePlayer", movePlayer);
   socket.on('disconnect', () => disconnect(socket));
   socket.on('placeBomb', placeBomb);
@@ -108,9 +93,9 @@ app.get('/rooms', (req, res) => {
   res.json(rooms);
 });
 
-app.get('/joinRoom/:roomId', (req, res) => {
+app.get('/joinRoom/:roomId/:playerId', (req, res) => {
   const roomId = parseInt(req.params.roomId);
-  const playerId = parseInt(req.cookies.id);
+  const playerId = req.params.playerId;
   console.log('joinRoom', playerId);
   for (let i = 0; i < rooms.length; i++) {
     const id = rooms[i].id;
@@ -163,9 +148,9 @@ function removePlayer(roomId, playerId) {
   io.emit('changePlayers', rooms);
 }
 
-app.get('/leaveRoom/:roomId', (req, res) => {
+app.get('/leaveRoom/:roomId/:playerId', (req, res) => {
   const roomId = parseInt(req.params.roomId);
-  const playerId = parseInt(req.cookies.id);
+  const playerId = req.params.playerId;
   removePlayer(roomId, playerId);
   res.json(rooms);
 });
