@@ -4,8 +4,9 @@ const cookieParser = require('cookie-parser');
 const uuid = require("uuid");
 const cors = require('cors');
 const app = express();
+const server = require('http').createServer(app);
 const port = process.env.PORT || 3000;
-const io = require('socket.io')(80);
+const io = require('socket.io')(server);
 const cookie = require('cookie');
 
 app.use(cookieParser());
@@ -193,4 +194,4 @@ app.get('/movePlayer', (req, res) => {
   res.sendStatus(200);
 });
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+server.listen(port, () => console.log(`Example app listening on port ${port}!`));

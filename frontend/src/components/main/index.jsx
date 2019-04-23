@@ -23,7 +23,7 @@ class Main extends React.Component {
       rooms: [],
       gameId: "",
     };
-    this.socket = io('http://localhost:80');
+    this.socket = io('http://localhost:3000');
     this.socket.on('startGame', this.startGameEvent);
     this.socket.on('changePlayers', this.changePlayers);
   }
