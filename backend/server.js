@@ -111,6 +111,7 @@ app.get('/rooms', (req, res) => {
 app.get('/joinRoom/:roomId', (req, res) => {
   const roomId = parseInt(req.params.roomId);
   const playerId = parseInt(req.cookies.id);
+  console.log('joinRoom', playerId);
   for (let i = 0; i < rooms.length; i++) {
     const id = rooms[i].id;
     if (id === roomId) {
