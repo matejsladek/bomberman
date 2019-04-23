@@ -15,6 +15,7 @@ class Game extends React.Component {
     this.bombExplode = this.bombExplode.bind(this);
     this.pixelsToMap = this.pixelsToMap.bind(this);
     this.playerDead = this.playerDead.bind(this);
+    this.checkOver = this.checkOver.bind(this);
   }
 
   componentDidMount() {
@@ -99,7 +100,9 @@ class Game extends React.Component {
     // this.platforms.create(750, 220, 'ground');
     for (let i = 0; i < this.props.room.players.length; i++) {
       const playerProps = this.props.room.players[i];
-      const player = this.scene.physics.add.sprite(0, 0, 'star');
+      const playerX = this.playerStartPositions[i][0] * this.blockSize;
+      const playerY = this.playerStartPositions[i][1] * this.blockSize;
+      const player = this.scene.physics.add.sprite(playerX, playerY, 'star');
       // player.setSize(this.blockSize/2, this.blockSize/2);
       // player.displayWidth = this.blockSize/2;
       // player.displayWidth(this.blockSize/2);
@@ -221,14 +224,29 @@ class Game extends React.Component {
 
   playerDead(data) {
     console.log('playerDead');
+    let last;
     if(this.props.room.id === data.roomId){
       for (let i = 0; i < this.players.length; i++) {
         const player = this.players[i];
         if(player.playerId === data.playerId){
+          last = player.playerId;
           player.alive = false;
           player.disableBody(true, true);
         }
       }
+    }
+    this.checkOver(last);
+  }
+
+  checkOver(last){
+    let someoneAlive = false;
+    for (let i = 0; i < this.players.length; i++) {
+      const player = this.players[i];
+      if(player.alive === true) someoneAlive = true;
+    }
+    if(!someoneAlive){
+      // this.props.goGameOver(this.props.roomId, last);
+      this.props.goGameOver(last);
     }
   }
 

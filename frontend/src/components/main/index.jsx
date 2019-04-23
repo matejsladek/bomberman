@@ -2,6 +2,7 @@ import React from 'react';
 import Lobby from '../lobby';
 import Room from '../room';
 import Game from '../game';
+import GameOver from '../gameOver';
 import style from './main.css';
 import io from 'socket.io-client'
 import {URL} from "../constants";
@@ -14,6 +15,7 @@ class Main extends React.Component {
     this.startGameEvent = this.startGameEvent.bind(this);
     this.getRooms = this.getRooms.bind(this);
     this.changePlayers = this.changePlayers.bind(this);
+    this.goGameOver = this.goGameOver.bind(this);
     this.state = {
       screen: 'Lobby',
       // screen: 'Game',
@@ -77,6 +79,11 @@ class Main extends React.Component {
     }
   }
 
+  goGameOver(winner){
+    this.setState({screen: "GameOver", winner});
+    // this.getRooms();
+  }
+
   render() {
     const screen = this.state.screen;
     const roomId = this.state.roomId;
@@ -97,15 +104,27 @@ class Main extends React.Component {
           />
       );
     }
-    return (
+    if (screen === 'Game') {
+      return (
         <Game
-            key={this.state.gameId}
-            roomId={this.state.roomId}
-            room={this.getRoom(roomId)}
-            backToLobby={this.backToLobby}
-            socket={this.socket}
+          key={this.state.gameId}
+          roomId={this.state.roomId}
+          room={this.getRoom(roomId)}
+          backToLobby={this.backToLobby}
+          goGameOver={this.goGameOver}
+          socket={this.socket}
         />
-    );
+      );
+    }
+    if (screen === 'GameOver') {
+      return (
+        <GameOver
+          backToLobby={this.backToLobby}
+          roomId={this.state.roomId}
+          winner={this.state.winner}
+        />
+      );
+    }
   }
 }
 

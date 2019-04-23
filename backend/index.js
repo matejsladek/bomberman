@@ -154,6 +154,10 @@ function removePlayer(roomId, playerId) {
       }
     }
   }
+  io.emit('playerDead', {
+    roomId,
+    playerId,
+  });
   io.emit('changePlayers', rooms);
 }
 
