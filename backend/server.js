@@ -12,7 +12,8 @@ app.use(bodyParser.json());
 
 const allowedOrigins = ['http://localhost:3000',
   'http://localhost:8080',
-  'http://yourapp.com'];
+  'http://bomberman.matejsladek.com',
+  'https://bomberman-238517.appspot.com'];
 app.use(cors({
   credentials: true,
   origin: function (origin, callback) {
